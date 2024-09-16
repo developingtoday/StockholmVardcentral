@@ -74,9 +74,12 @@ if option=='Nu':
 center_lat, center_lon = 59.3293, 18.0686
 m=folium.Map(location=[center_lat, center_lon], zoom_start=12)
 for _, row in res.iterrows():
+    iconf=folium.Icon(color="green",icon="plus")
+    if(row['aplicat']=='Da'):
+        iconf=folium.Icon(color="blue",icon="check")
     folium.Marker(
         [row['latitude'], row['longitude']],
         popup=f"<a href={row['url']} target=_blank>{row['heading']}<a/> <br>Address: {row['address']}",
-        icon=folium.Icon(color="green", icon="plus"),
+        icon=iconf,
     ).add_to(m)
 st_data=st_folium(m,width=725)
