@@ -37,7 +37,6 @@ def extract_url(hyperlink):
     return match.group(1) if match else None
 
 
-@st.cache_data
 def load_data():
 
     data=pd.read_excel(st.secrets['url'])
