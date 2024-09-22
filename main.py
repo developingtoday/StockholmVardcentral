@@ -20,23 +20,31 @@ st.title('Vardcentral in Stockholm')
 
 @st.cache_data
 def load_dynamic_data():
+    lst=[]
+    page=1
     base_url = "https://www.1177.se/Stockholm"
-    url = st.secrets['request_url']
-    response = requests.get(url)
-    df=pd.DataFrame.empty
-    if response.status_code==200:
-        data=response.json()
-        df=pd.DataFrame(data['SearchHits'])
-        df['Url'] = df['Url'].apply(lambda x: f'{base_url}{x}')
-        lowercase = lambda x: str(x).lower()
-        df.rename(lowercase, axis='columns', inplace=True)
+    while True:
+        url = st.secrets['request_url'].replace('{pageIndexPlaceholder}',str(page))
+        response = requests.get(url)
+        if response.status_code==200:
+            data=response.json()
+            lst.extend(data['SearchHits'])
+            if data['NextPage'] is None:
+                break
+        else:
+            break
+        page=page+1
+    df = pd.DataFrame(lst)
+    df['Url'] = df['Url'].apply(lambda x: f'{base_url}{x}')
+    lowercase = lambda x: str(x).lower()
+    df.rename(lowercase, axis='columns', inplace=True)
     return df
 
 def extract_url(hyperlink):
     match = re.search(r'HYPERLINK\("([^"]+)"', hyperlink)
     return match.group(1) if match else None
 
-
+@st.cache_data(ttl=600)
 def load_data():
 
     data=pd.read_excel(st.secrets['url'])
@@ -55,7 +63,8 @@ data_load_state = st.text('Loading data...')
 data = load_dynamic_data()
 df=load_data()
 df=df[['hsaid','aplicat']]
-res=pd.merge(data,df,on='hsaid')
+res=pd.merge(data,df,on='hsaid', how="left" )
+res['aplicat'].fillna('Nu')
 data_load_state.text("Done! (using st.cache_data)")
 
 if st.checkbox('Show raw data'):
